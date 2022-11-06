@@ -1,15 +1,20 @@
 
 import os
 import logging
+import self_documenting_struct as struct
+
 from assets.File import File
-from .Background import Background
 from assets.Asserts import assert_equal
-from .TonkaAsset import TonkaAsset
+
+from .Background import Background
+from .Asset import Asset
 
 ## Contains all the assets for a single scene.
-## Each of these assets is stored in a chunk. 
-class ModuleDAT(File):
-    def __init__(self, filepath):
+## Each of the assets is stored in a chunk in this file.
+class Module(File):
+    ## Parses the module.
+    ## \param[in] filepath - The full path to the module file.
+    def __init__(self, filepath: str):
         # OPEN THE MODULE FILE.
         super().__init__(filepath)
 
@@ -18,20 +23,23 @@ class ModuleDAT(File):
         # and each of these assets is stored in a chunk. These chunks are referenced
         # by their byte position in this file.
         chunk_pointers = []
-        chunk_count = self.uint16_le()
+        chunk_count = struct.unpack.uint16_le(self.stream)
         logging.debug(f'Expecting {chunk_count} chunks in {filepath}')
         for index in range(chunk_count):
-            chunk_pointer = self.uint32_le()
+            # REGISTER THIS CHUNK.
+            chunk_pointer = struct.unpack.uint32_le(self.stream)
             chunk_pointers.append(chunk_pointer)
             logging.debug(f'Registered chunk {index + 1}\{chunk_count} @ 0x{chunk_pointer:012x}')
         # The pointer to the final chunk is the total length of this file.
-        chunk_pointers.append(len(self.stream))
-        assert_equal(self.uint16_le(), chunk_count)
-
+        total_file_length = len(self.stream)
+        chunk_pointers.append(total_file_length)
+        # For some reason the chunk count is included twice.
+        # We will just verify they are equal.
+        redundant_chunk_count = struct.unpack.uint16_le(self.stream)
+        assert_equal(redundant_chunk_count, chunk_count)
         # TODO: I don't know what is here.
-        self.unk1 = self.uint32_le()
-        if self.unk1 != 0:
-            logging.warning(f'Unk1: {self.unk1}')
+        self.unk1 = struct.unpack.uint32_le(self.stream)
+        logging.debug(f'Unk1: {self.unk1}')
 
         # READ THE BACKGROUND IMAGE FOR THIS SCREEN.
         # The background is always the first chunk of the module.
@@ -39,12 +47,12 @@ class ModuleDAT(File):
         background_size = end_of_background_pointer - self.stream.tell()
         logging.debug(f'*** CHUNK BACKGROUND (0x{self.stream.tell():012x} -> 0x{end_of_background_pointer:012x} [0x{background_size:04x} bytes]) ***')
         self.background = Background(self)
-        # This is to ensure we are at the end of the background.
-        assert_equal(self.position, chunk_pointers[0], "stream position")
+        # Ensure we are at the end of the background.
+        self.assert_at_stream_position(chunk_pointers[0])
 
         # READ EACH OF THE ASSETS IN THIS MODULE.
         for index in range(len(chunk_pointers) - 1):
-            # RECORD THE LENGTH OF THIS ASSET.
+            # CALCULATE THE LENGTH OF THIS ASSET.
             start_of_asset_pointer = chunk_pointers[index]
             end_of_asset_pointer = chunk_pointers[index + 1]
             asset_length = end_of_asset_pointer - start_of_asset_pointer
@@ -52,17 +60,24 @@ class ModuleDAT(File):
 
             # READ THE ASSET.
             # Ensure the stream is at the start of the asset.
-            assert_equal(self.position, start_of_asset_pointer, "stream position")
+            self.assert_at_stream_position(start_of_asset_pointer)
             # Read the asset.
-            asset = TonkaAsset(self)
+            asset = Asset(self)
             self.assets.append(asset)
     
-    def export(self, filepath: str, command_line_arguments):
-        # CALCULATE THE FOLDER FOR THIS FILE.
-        file_filepath = super().export(filepath, command_line_arguments)
+    ## Exports the assets in this module.
+    ## \param[in] directory_path - The directory where the assets should be exported.
+    ##            Asset exporters may create initial subdirectories.
+    ## \param[in] command_line_arguments - All the command-line arguments provided to the 
+    ##            script that invoked this function, so asset exporters can read any 
+    ##            necessary formatting options.
+    def export(self, directory_path: str, command_line_arguments):
+        # EXPORT THE ASSETS IN THE ASSETS LIST.
+        # The base class takes care of these.
+        export_path = super().export(directory_path, command_line_arguments)
 
         # EXPORT THE BACKGROUND.
         # Because the background is not stored in the assets list,
         # it must be exported separately.
-        background_filepath = os.path.join(file_filepath, self.filename)
-        self.background.export(background_filepath, command_line_arguments.bitmap_format)
+        background_filepath = os.path.join(export_path, self.filename)
+        self.background.export(background_filepath, command_line_arguments)
