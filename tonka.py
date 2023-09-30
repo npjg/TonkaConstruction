@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 
-from assets.CommandLine import CommandLineArguments
-from assets.Application import Application, FileDetectionEntry
+from asset_extraction_framework.CommandLine import CommandLineArguments
+from asset_extraction_framework.Application import Application, FileDetectionEntry
 
 from tonka.Module import Module
 

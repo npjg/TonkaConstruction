@@ -1,10 +1,10 @@
 
 import os
 import logging
-import self_documenting_struct as struct
 
-from assets.File import File
-from assets.Asserts import assert_equal
+import self_documenting_struct as struct
+from asset_extraction_framework.File import File
+from asset_extraction_framework.Asserts import assert_equal
 
 from .Background import Background
 from .Asset import Asset
@@ -79,5 +79,4 @@ class Module(File):
         # EXPORT THE BACKGROUND.
         # Because the background is not stored in the assets list,
         # it must be exported separately.
-        background_filepath = os.path.join(export_path, self.filename)
-        self.background.export(background_filepath, command_line_arguments)
+        self.background.export(export_path, command_line_arguments)

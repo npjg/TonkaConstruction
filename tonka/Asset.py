@@ -4,11 +4,10 @@ import io
 from enum import Enum
 
 import self_documenting_struct as struct
-
-from assets.File import File
-from assets.Asset.Animation import Animation
-from assets.Asset.Image import RectangularBitmap
-from assets.Asset.Sound import Sound
+from asset_extraction_framework.File import File
+from asset_extraction_framework.Asset.Animation import Animation
+from asset_extraction_framework.Asset.Image import RectangularBitmap
+from asset_extraction_framework.Asset.Sound import Sound
 
 ## Each asset has a series of frames that can contain a still frame only, 
 ## audio and a still frame, or unnown data. All assets share this animation-
@@ -37,6 +36,7 @@ class Asset(Animation):
     def __init__(self, file: File):
         # SET THE METADATA.
         super().__init__()
+        self.name = None
         self.alpha_color = 0x0f # Corresponds to 0x0dff0b in the palette.
         self.bitmaps_per_audio = 8
 
@@ -140,18 +140,12 @@ class Asset(Animation):
             # ADD ALL COMPLETE FRAMES TO THE BITMAP SET.
             # Extra frames should never exist in the first place, so they are just thrown away.
             if not frame.ignore_frame:
-                frame.palette = file.background.palette
-                self.bitmaps.append(frame)
+                frame._palette = file.background._palette
+                self.frames.append(frame)
 
             # ADD ANY AUDIO TO THE AUDIO SET.
             if frame.audio is not None:
-                # CREATE A SOUND ASSET.
-                sound = Sound()
-                sound.pcm = frame.audio
-                sound.audio_type = 'u16le'
-                sound.bitrate = '11.025k'
-                sound.channel_count = 1
-                self.audios.append(sound)
+                self.sounds.append(frame.audio)
 
     ## Exports the assets in this module.
     ## \param[in] directory_path - The directory where the assets should be exported.
@@ -196,7 +190,7 @@ class Asset(Animation):
         # if they have a sufficiently few number of frames.
         DISCRETE_CUTOFF = 3
         return (self.type not in (self.AssetType.CURSOR, self.AssetType.AUDIO_ONLY)) and \
-            (len(self.bitmaps) > DISCRETE_CUTOFF)
+            (len(self.frames) > DISCRETE_CUTOFF)
 
     ## Returns True when the bitmap has unreasonably large dimensions.
     ## This usually indicates a parsing error or extra frame.
@@ -267,11 +261,29 @@ class AssetFrame(RectangularBitmap):
         # could still be zero to indicate no audio is actually present.
         audio_available_to_read = (audio_expected) and (self.audio_length_in_bytes > 0)
         if audio_available_to_read:
-            self.audio = file.stream.read(self.audio_length_in_bytes)
+            # TODO: Can we turn this into a memoryview? And only reference the original file?
+            self.audio = Sound()
+            self.audio._pcm = file.stream.read(self.audio_length_in_bytes)
+            self.audio._big_endian = False
+            self.audio._sample_width = 1
+            self.audio._sample_rate = 22050
+            self.audio._channel_count = 1
 
         # DECOMPRESS THE BITMAP FOR THIS FRAME.
-        self.raw = file.stream.read(self.compressed_image_data_size)
-        self.decompress_bitmap()
+        if self.compressed_image_data_size > 0:
+            self.raw = file.stream.read(self.compressed_image_data_size)
+
+    @property
+    def pixels(self):
+        if not self.ignore_frame and self.compressed_image_data_size > 0:
+            self.decompress_bitmap()
+            return self._pixels
+
+    # \return True when the image has one zero and one nonzero dimension.
+    # The image should not be processed in this state.
+    @property
+    def is_inconsistent(self) -> bool:
+        return (self.width == 0 and self.height != 0) or (self.width != 0 and self.height == 0)
 
     ## Returns True when the bitmap has unreasonably large dimensions.
     ## This usually indicates a parsing error or extra frame.
@@ -283,22 +295,22 @@ class AssetFrame(RectangularBitmap):
     def decompress_bitmap(self):
         # UNCOMPRESS THE COMPRESSED IMAGE STREAM.
         # First, we must have a empty place to put the uncompressed bytes.
-        self.pixels = b''
+        self._pixels = b''
         compressed_image_data = io.BytesIO(self.raw)
         compressed_image_data.seek(0)
         # Read the full number of compressed bytes.
         while compressed_image_data.tell() < self.compressed_image_data_size:
             # Read the operation byte. 
-            n = int.from_bytes(compressed_image_data.read(1), byteorder="little", signed=True)
+            n = struct.unpack.int8(compressed_image_data)
             # An operation byte inclusively between 0x00 (+0) and 0x7f (+127) indicates
             # an uncompressed run of the value of the operation byte plus one.
             if n >= 0 and n <= 127:
                 run_length = n+1
-                self.pixels += compressed_image_data.read(run_length)
+                self._pixels += compressed_image_data.read(run_length)
             # An operation byte inclusively between 0x81 (-127) and 0xff (-1) indicates
             # the next byte is a color that should be repeated for a run of (-n+1) pixels.
             elif n >= -127 and n <= -1:
                 color_byte = compressed_image_data.read(1)
                 run_length = -n+1
                 color_run = color_byte * run_length
-                self.pixels += color_run
+                self._pixels += color_run

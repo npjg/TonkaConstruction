@@ -1,8 +1,7 @@
 
 import self_documenting_struct as struct
-
-from assets.Asset.Image import RectangularBitmap
-from assets.Asset.Palette import RgbPalette
+from asset_extraction_framework.Asset.Image import RectangularBitmap
+from asset_extraction_framework.Asset.Palette import RgbPalette
 
 ## Provides a background for each module.
 class Background(RectangularBitmap):
@@ -29,8 +28,7 @@ class Background(RectangularBitmap):
         self.unk9 = struct.unpack.uint32_le(file.stream)
         self.unk10 = struct.unpack.uint32_le(file.stream)
         self.unk13 = file.stream.read(0x14)
-
-        self.palette = RgbPalette(file, expected_total_entries = 0x100, blue_green_red_order = True)
+        self._palette = RgbPalette(file, has_entry_alignment = True, total_palette_entries = 0x100, blue_green_red_order = True)
         self._width = struct.unpack.uint32_le(file.stream)
         self._height = struct.unpack.uint32_le(file.stream)
         pixel_count = struct.unpack.uint32_le(file.stream)
@@ -39,4 +37,4 @@ class Background(RectangularBitmap):
         self.unk14 = file.stream.read(0x0c)
 
         # The image data is always uncompressed.
-        self.pixels = file.stream.read(pixel_count)
+        self._pixels = file.stream.read(pixel_count)
