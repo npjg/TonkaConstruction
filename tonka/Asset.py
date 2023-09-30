@@ -89,8 +89,8 @@ class Asset(Animation):
         self.unk1 = file.stream.read(0x56)
 
         # READ THE COORDINATES OF THE ANIMATION.
-        self._left = struct.unpack.uint16_le(file.stream)
-        self._top = struct.unpack.uint16_le(file.stream)
+        self._left = struct.unpack.int16_le(file.stream)
+        self._top = struct.unpack.int16_le(file.stream)
 
         # TODO: I don't know what's in here.
         self.unk2 = file.stream.read(0x04)
@@ -314,3 +314,7 @@ class AssetFrame(RectangularBitmap):
                 run_length = -n+1
                 color_run = color_byte * run_length
                 self._pixels += color_run
+
+        off_by_one_compression_error = (len(self._pixels) - self.uncompressed_image_size == 1)
+        if off_by_one_compression_error:
+            self._pixels = self._pixels[:-1]
