@@ -56,11 +56,14 @@ class Module(File):
             start_of_asset_pointer = chunk_pointers[index]
             end_of_asset_pointer = chunk_pointers[index + 1]
             asset_length = end_of_asset_pointer - start_of_asset_pointer
-            logging.debug(f'*** CHUNK {index} (0x{start_of_asset_pointer:012x} -> 0x{end_of_asset_pointer:012x} [0x{asset_length:04x} bytes]) ***')
 
             # READ THE ASSET.
-            # Ensure the stream is at the start of the asset.
-            self.assert_at_stream_position(start_of_asset_pointer)
+            stream_at_start_of_asset = len(self._pixels) - self.uncompressed_image_size == 1
+            if not stream_at_start_of_asset:
+                # Ensure the stream is at the start of the asset.
+                # If we need to seek, a warning will be issued.
+                # TODO: Figure out the instance where this is required.
+                self.stream.seek(start_of_asset_pointer)
             # Read the asset.
             asset = Asset(self)
             self.assets.append(asset)
