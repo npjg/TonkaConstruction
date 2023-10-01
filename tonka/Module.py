@@ -58,7 +58,7 @@ class Module(File):
             asset_length = end_of_asset_pointer - start_of_asset_pointer
 
             # READ THE ASSET.
-            stream_at_start_of_asset = len(self._pixels) - self.uncompressed_image_size == 1
+            stream_at_start_of_asset = self.assert_at_stream_position(start_of_asset_pointer, warn_only = True)
             if not stream_at_start_of_asset:
                 # Ensure the stream is at the start of the asset.
                 # If we need to seek, a warning will be issued.
