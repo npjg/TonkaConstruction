@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#! python3
 
 from asset_extraction_framework.CommandLine import CommandLineArguments
 from asset_extraction_framework.Application import Application, FileDetectionEntry
