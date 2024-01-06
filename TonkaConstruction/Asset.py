@@ -47,7 +47,7 @@ class Asset(Animation):
         # SET THE METADATA.
         super().__init__()
         self.name = None
-        self.alpha_color = 0x0f # Corresponds to 0x0dff0b in the palette.
+        self._alpha_color = 0x0f # Corresponds to 0x0dff0b in the palette.
         self.bitmaps_per_audio = 8
 
         # GET THE TYPE OF THE ASSET.
