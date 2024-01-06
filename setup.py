@@ -4,6 +4,5 @@ from setuptools import setup, Extension
 #  python3 setup.py build_ext --inplace
 packbits = Extension('PackBits', sources = ['TonkaConstruction/PackBits.c'])
 setup(
-    name = 'Tonka',
-    version = '0.1',
+    name = 'TonkaConstruction',
     ext_modules = [packbits])
