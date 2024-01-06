@@ -9,6 +9,16 @@ from asset_extraction_framework.Asset.Animation import Animation
 from asset_extraction_framework.Asset.Image import RectangularBitmap
 from asset_extraction_framework.Asset.Sound import Sound
 
+# ATTEMPT TO IMPORT THE C-BASED DECOMPRESSION LIBRARY.
+# We will fall back to the pure Python implementation if it doesn't work, but there is easily a 
+# 10x slowdown with pure Python.
+try:
+    import PackBits
+    packbits_c_loaded = True
+except ImportError:
+    print('WARNING: The C PackBits decompression binary is not available on this installation. Expect decompression to be SLOW.')
+    packbits_c_loaded = False
+
 ## Each asset has a series of frames that can contain a still frame only, 
 ## audio and a still frame, or unnown data. All assets share this animation-
 ## like basic structure.
@@ -276,7 +286,10 @@ class AssetFrame(RectangularBitmap):
     @property
     def pixels(self):
         if not self.ignore_frame and self.compressed_image_data_size > 0:
-            self.decompress_bitmap()
+            if packbits_c_loaded:
+                self._pixels = PackBits.decompress(self.raw, self.compressed_image_data_size, self.uncompressed_image_size)
+            else:
+                self.decompress_bitmap()
             return self._pixels
 
     # \return True when the image has one zero and one nonzero dimension.
@@ -292,6 +305,7 @@ class AssetFrame(RectangularBitmap):
         return (self.width > 0xffff) or (self.height > 0xffff)
 
     ## Applies Apple PackBits to decompress the bitmap bitstream.
+    # NOTE: This is a pure Python implementation and is slow. The C implementation should be preferred when available!
     def decompress_bitmap(self):
         # UNCOMPRESS THE COMPRESSED IMAGE STREAM.
         # First, we must have a empty place to put the uncompressed bytes.
