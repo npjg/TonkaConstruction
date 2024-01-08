@@ -29,7 +29,7 @@ class Module(File):
             # REGISTER THIS CHUNK.
             chunk_pointer = struct.unpack.uint32_le(self.stream)
             chunk_pointers.append(chunk_pointer)
-            logging.debug(f'Registered chunk {index + 1}\{chunk_count} @ 0x{chunk_pointer:012x}')
+            logging.debug(f'Registered chunk {index + 1} \\ {chunk_count} @ 0x{chunk_pointer:012x}')
         # The pointer to the final chunk is the total length of this file.
         total_file_length = len(self.stream)
         chunk_pointers.append(total_file_length)
