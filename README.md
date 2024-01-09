@@ -3,9 +3,6 @@ Hey there little truckster!
 
 This was one of the first computer games I ever played. If I recall correctly, I got the CD-ROM from a yard sale... where I've gotten most games I've ever played. This game brought much enjoyment to me as a youngster.
 
-# Support Me!
-If you like my reverse-engineering work, you can [buy me a matcha latte](https://www.buymeacoffee.com/natster) 🍵! 
-
 ## Usage
 Installing the PyPI package will also install a `TonkaConstruction` script that can be invoked from the command line as follows:
 ```
@@ -19,3 +16,8 @@ Currently there is no support for running tests from CI/CD because these service
 
 ## Acknowledgements
 The Tonka truck icon used as this repository's icon was taken from the Tonka Construction CD-ROM.
+
+# Support My Reverse Engineering!
+<a href="https://www.buymeacoffee.com/natster" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/default-orange.png" alt="Buy Me A Coffee" height="41" width="174"></a>
+
+If you like my reverse engineering, you can [buy me a matcha latte](https://www.buymeacoffee.com/natster) to show your appreciation 🍵!
