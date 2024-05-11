@@ -10,9 +10,9 @@ from asset_extraction_framework.Asset.Image import RectangularBitmap
 from asset_extraction_framework.Asset.Sound import Sound
 
 # ATTEMPT TO IMPORT THE C-BASED DECOMPRESSION LIBRARY.
-# We will fall back to the pure Python implementation if it doesn't work, but there is easily a 
-# 10x slowdown with pure Python.
 try:
+    # We will fall back to the pure Python implementation if it doesn't work, but there is easily a 
+    # 10x slowdown with pure Python.
     import PackBits
     packbits_c_loaded = True
 except ImportError:
