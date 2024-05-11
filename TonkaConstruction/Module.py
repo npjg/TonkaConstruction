@@ -17,6 +17,7 @@ class Module(File):
     def __init__(self, filepath: str):
         # OPEN THE MODULE FILE.
         super().__init__(filepath)
+        self.assets = []
 
         # REGISTER THE CHUNKS IN THIS FILE.
         # Each Module typically contains the assets for a single screen of the game,
@@ -74,12 +75,20 @@ class Module(File):
     ## \param[in] command_line_arguments - All the command-line arguments provided to the 
     ##            script that invoked this function, so asset exporters can read any 
     ##            necessary formatting options.
-    def export(self, directory_path: str, command_line_arguments):
-        # EXPORT THE ASSETS IN THE ASSETS LIST.
-        # The base class takes care of these.
-        export_path = super().export(directory_path, command_line_arguments)
+    def export_assets(self, directory_path: str, command_line_arguments):
+        export_directory = self.create_export_directory(directory_path)
 
         # EXPORT THE BACKGROUND.
         # Because the background is not stored in the assets list,
         # it must be exported separately.
-        self.background.export(export_path, command_line_arguments)
+        self.background.export(export_directory, command_line_arguments)
+
+        # EXPORT THE ASSETS IN THIS CONTEXT.
+        for index, asset in enumerate(self.assets):
+            # SET THE ASSET NAME IF IT IS NOT ALREADY SET.
+            # This ensures every asset has a unique name within this file.
+            if asset.name is None:
+                asset.name = f'{index}'
+
+            # EXPORT THE ASSET.
+            asset.export(export_directory, command_line_arguments)
