@@ -6,7 +6,7 @@ from setuptools import setup, Extension
 # For development work, looks like you would use this to compile the 
 # C-based image decompressor:
 #  python3 setup.py build_ext --inplace
-packbits = Extension('PackBits', sources = ['TonkaConstruction/PackBits.c'])
+packbits = Extension('PackBits', sources = ['src/TonkaConstruction/PackBits.c'])
 try:
     # TRY TO COMPILE THE C-BASED IMAGE DECOMPRESSOR.
     setup(
