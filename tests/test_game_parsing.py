@@ -14,7 +14,6 @@ game_directories = []
 game_root_directory_real_path = os.path.realpath(GAME_ROOT_DIRECTORY)
 if not os.path.exists(os.path.realpath(GAME_ROOT_DIRECTORY)):
     warnings.warn('No test data present, game parsing tests will be skipped.')
-    game_directories = []
 else:
     for filename in os.listdir(os.path.realpath(GAME_ROOT_DIRECTORY)):
         filepath = os.path.join(GAME_ROOT_DIRECTORY, filename)
